@@ -416,6 +416,8 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 		lbStrategy = LBStrategyFirst{}
 	case "random":
 		lbStrategy = LBStrategyRandom{}
+    case "rr":
+        lbStrategy = LBStrategyRR{}
 	default:
 		if strings.HasPrefix(lbStrategyStr, "p") {
 			n, err := strconv.ParseInt(strings.TrimPrefix(lbStrategyStr, "p"), 10, 32)
@@ -428,6 +430,9 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 			dlog.Warnf("Unknown load balancing strategy: [%s]", config.LBStrategy)
 		}
 	}
+    dlog.Infof("Load balancing strategy: %v", config.LBStrategy)
+    proxy.serversInfo.prevCandidate = 0
+    proxy.serversInfo.lbStrategyStr = strings.ToLower(config.LBStrategy)
 	proxy.serversInfo.lbStrategy = lbStrategy
 	proxy.serversInfo.lbEstimator = config.LBEstimator
 

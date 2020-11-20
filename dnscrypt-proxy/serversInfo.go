@@ -97,6 +97,12 @@ func (LBStrategyRandom) getCandidate(serversCount int) int {
 	return rand.Intn(serversCount)
 }
 
+type LBStrategyRR struct{ prev int }
+
+func (LBStrategyRR) getCandidate(serversCount int) int {
+    return 0
+}
+
 var DefaultLBStrategy = LBStrategyP2{}
 
 type ServersInfo struct {
@@ -104,7 +110,9 @@ type ServersInfo struct {
 	inner             []*ServerInfo
 	registeredServers []RegisteredServer
 	lbStrategy        LBStrategy
+    lbStrategyStr     string
 	lbEstimator       bool
+    prevCandidate      int
 }
 
 func NewServersInfo() ServersInfo {
@@ -234,7 +242,13 @@ func (serversInfo *ServersInfo) getOne() *ServerInfo {
 	if serversInfo.lbEstimator {
 		serversInfo.estimatorUpdate()
 	}
-	candidate := serversInfo.lbStrategy.getCandidate(serversCount)
+    candidate := 0
+    if serversInfo.lbStrategyStr == "rr" {
+        candidate = (serversInfo.prevCandidate + 1) % serversCount
+        serversInfo.prevCandidate = candidate
+    } else { 
+	    candidate = serversInfo.lbStrategy.getCandidate(serversCount)
+    }
 	serverInfo := serversInfo.inner[candidate]
 	dlog.Debugf("Using candidate [%s] RTT: %d", (*serverInfo).Name, int((*serverInfo).rtt.Value()))
 	serversInfo.Unlock()
