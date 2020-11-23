@@ -255,7 +255,12 @@ func (serversInfo *ServersInfo) getOne(qName string) *ServerInfo {
             candidate = (serversInfo.prevCandidate + 1) % serversCount
         case "hash":
             h := fnv.New32a()
-            h.Write([]byte(qName))
+            sld, err := parseSLD(qName)
+            if err != nil {
+                serversInfo.Unlock()
+                return nil
+            }
+            h.Write([]byte(sld))
             index := h.Sum32()
             candidate = int(index) % serversCount
         default:
@@ -568,4 +573,14 @@ func (serverInfo *ServerInfo) noticeSuccess(proxy *Proxy) {
 		serverInfo.rtt.Add(float64(elapsedMs))
 	}
 	proxy.serversInfo.Unlock()
+}
+
+func parseSLD(qName string) (string, error) {
+    // TOOD: Figure out how we handle ccTLDs that use two labels, e.g. .co.uk
+    labels := dns.SplitDomainName(qName)
+    if len(labels) < 2 {
+        return "", fmt.Errorf("Couldn't parse second-level domain for %v: not enough labels", qName)
+    }
+    sld := labels[len(labels)-2] + "." + labels[len(labels)-1]
+    return sld, nil
 }
