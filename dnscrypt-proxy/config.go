@@ -418,6 +418,8 @@ func ConfigLoad(proxy *Proxy, flags *ConfigFlags) error {
 		lbStrategy = LBStrategyRandom{}
     case "rr":
         lbStrategy = LBStrategyRR{}
+    case "hash":
+        lbStrategy = LBStrategyHash{}
 	default:
 		if strings.HasPrefix(lbStrategyStr, "p") {
 			n, err := strconv.ParseInt(strings.TrimPrefix(lbStrategyStr, "p"), 10, 32)

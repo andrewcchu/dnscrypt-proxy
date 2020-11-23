@@ -125,9 +125,9 @@ keepalive = 30
 # blocked_query_response = 'refused'
 
 
-## Load-balancing strategy: 'p2' (default), 'ph', 'first' or 'random'
+## Load-balancing strategy: 'p2' (default), 'ph', 'first', 'random', 'rr', or 'hash'
 
-lb_strategy = 'rr'
+lb_strategy = 'hash'
 
 ## Set to `true` to constantly try to estimate the latency of all the resolvers
 ## and adjust the load-balancing parameters accordingly, or to `false` to disable.

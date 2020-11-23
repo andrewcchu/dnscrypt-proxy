@@ -471,12 +471,15 @@ func (proxy *Proxy) processIncomingQuery(clientProto string, serverProto string,
 	pluginsState := NewPluginsState(proxy, clientProto, clientAddr, serverProto, start)
 	serverName := "-"
 	needsEDNS0Padding := false
-	serverInfo := proxy.serversInfo.getOne()
+	query, _ = pluginsState.ApplyQueryPlugins(&proxy.pluginsGlobals, query, needsEDNS0Padding)
+	serverInfo := proxy.serversInfo.getOne(pluginsState.qName)
 	if serverInfo != nil {
 		serverName = serverInfo.Name
 		needsEDNS0Padding = (serverInfo.Proto == stamps.StampProtoTypeDoH || serverInfo.Proto == stamps.StampProtoTypeTLS)
 	}
-	query, _ = pluginsState.ApplyQueryPlugins(&proxy.pluginsGlobals, query, needsEDNS0Padding)
+    // NOTE: This is where the call to ApplyQueryPlugins used to be. Need to 
+    // make sure it's safe to move up.
+    // query, _ = pluginsState.ApplyQueryPlugins(&proxy.pluginsGlobals, query, needsEDNS0Padding)
 	if len(query) < MinDNSPacketSize || len(query) > MaxDNSPacketSize {
 		return
 	}

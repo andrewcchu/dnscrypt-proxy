@@ -13,6 +13,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+    "hash/fnv"
 
 	"github.com/VividCortex/ewma"
 	"github.com/jedisct1/dlog"
@@ -97,9 +98,15 @@ func (LBStrategyRandom) getCandidate(serversCount int) int {
 	return rand.Intn(serversCount)
 }
 
-type LBStrategyRR struct{ prev int }
+type LBStrategyRR struct{ }
 
 func (LBStrategyRR) getCandidate(serversCount int) int {
+    return 0
+}
+
+type LBStrategyHash struct{ }
+
+func (LBStrategyHash) getCandidate(serversCount int) int {
     return 0
 }
 
@@ -112,7 +119,7 @@ type ServersInfo struct {
 	lbStrategy        LBStrategy
     lbStrategyStr     string
 	lbEstimator       bool
-    prevCandidate      int
+    prevCandidate     int
 }
 
 func NewServersInfo() ServersInfo {
@@ -232,7 +239,7 @@ func (serversInfo *ServersInfo) estimatorUpdate() {
 	}
 }
 
-func (serversInfo *ServersInfo) getOne() *ServerInfo {
+func (serversInfo *ServersInfo) getOne(qName string) *ServerInfo {
 	serversInfo.Lock()
 	serversCount := len(serversInfo.inner)
 	if serversCount <= 0 {
@@ -243,12 +250,18 @@ func (serversInfo *ServersInfo) getOne() *ServerInfo {
 		serversInfo.estimatorUpdate()
 	}
     candidate := 0
-    if serversInfo.lbStrategyStr == "rr" {
-        candidate = (serversInfo.prevCandidate + 1) % serversCount
-        serversInfo.prevCandidate = candidate
-    } else { 
-	    candidate = serversInfo.lbStrategy.getCandidate(serversCount)
+    switch serversInfo.lbStrategyStr {
+        case "rr":
+            candidate = (serversInfo.prevCandidate + 1) % serversCount
+        case "hash":
+            h := fnv.New32a()
+            h.Write([]byte(qName))
+            index := h.Sum32()
+            candidate = int(index) % serversCount
+        default:
+	        candidate = serversInfo.lbStrategy.getCandidate(serversCount)
     }
+    serversInfo.prevCandidate = candidate
 	serverInfo := serversInfo.inner[candidate]
 	dlog.Debugf("Using candidate [%s] RTT: %d", (*serverInfo).Name, int((*serverInfo).rtt.Value()))
 	serversInfo.Unlock()
