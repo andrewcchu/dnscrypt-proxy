@@ -189,7 +189,16 @@ func (serversInfo *ServersInfo) refresh(proxy *Proxy) (int, error) {
 	}
 	serversInfo.Lock()
 	sort.SliceStable(serversInfo.inner, func(i, j int) bool {
-		return serversInfo.inner[i].initialRtt < serversInfo.inner[j].initialRtt
+        /**
+         * Sort by name of servers provided in config file rather than RTTs.
+         * This ensures that the mapping of domain names to resolvers 
+         * will be consistent, even when the certificates are refreshed.
+         * Note that the LB estimator needs to be disabled as well to ensure 
+         * that the order doesn't change when latencies are periodically 
+         * re-measured.
+         */
+        // return serversInfo.inner[i].initialRtt < serversInfo.inner[j].initialRtt
+        return serversInfo.inner[i].Name < serversInfo.inner[j].Name
 	})
 	inner := serversInfo.inner
 	innerLen := len(inner)
