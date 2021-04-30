@@ -271,7 +271,7 @@ func (serversInfo *ServersInfo) getOne(qName string) *ServerInfo {
             }
             h.Write([]byte(sld))
             index := h.Sum32()
-            candidate = int(index) % serversCount
+            candidate = int(index % uint32(serversCount))
         default:
 	        candidate = serversInfo.lbStrategy.getCandidate(serversCount)
     }
