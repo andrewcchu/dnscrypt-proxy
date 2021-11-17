@@ -125,7 +125,7 @@ keepalive = 30
 # blocked_query_response = 'refused'
 
 
-## Load-balancing strategy: 'p2' (default), 'ph', 'first', 'random', 'rr', or 'hash'
+## Load-balancing strategy: 'p2' (default), 'ph', 'first', 'random', 'rr', 'hash', or 'la'
 
 lb_strategy = 'hash'
 

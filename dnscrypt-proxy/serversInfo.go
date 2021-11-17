@@ -110,6 +110,12 @@ func (LBStrategyHash) getCandidate(serversCount int) int {
     return 0
 }
 
+type LBStrategyLocationAvoidant struct{ }
+
+func (LBStrategyLocationAvoidant) getCandidate(serversCount int) int {
+    return 0
+}
+
 var DefaultLBStrategy = LBStrategyP2{}
 
 type ServersInfo struct {
@@ -277,6 +283,29 @@ func (serversInfo *ServersInfo) getOne(qName string) *ServerInfo {
     }
     serversInfo.prevCandidate = candidate
 	serverInfo := serversInfo.inner[candidate]
+	// Compare addr. of candidate with denylist addresses
+    if serversInfo.lbStrategyStr == "la" {
+    	la_flag := 0
+    	changed_flag := 0
+    	for la_flag != 1 { // Scuffed flag for while loop
+	    	for k, v := range denylist { // Iterate over "first key" layer of map
+	    		_ = k
+	    		for key, val := range v { // Iterate over all IP addr. strings of DNS
+	    			_ = val
+	    			if ((*serverInfo).TCPAddr)).IP.String() == key { // On match, reset candidate and serverInfo, continue to double check new assignment
+	    				candidate = (serversInfo.prevCandidate + 1) % serversCount // Reassign to RR
+					    serversInfo.prevCandidate = candidate
+						serverInfo := serversInfo.inner[candidate]
+						changed_flag = 1
+						continue
+	    			}
+	    		}
+			}
+			if changed_flag = 0 {
+				la_flag = 1 // Set flag to exit while loop if if conditional not entered, candidate not re-assigned
+			}
+    	}
+    }
 	dlog.Debugf("Using candidate [%s] RTT: %d", (*serverInfo).Name, int((*serverInfo).rtt.Value()))
 	serversInfo.Unlock()
 
