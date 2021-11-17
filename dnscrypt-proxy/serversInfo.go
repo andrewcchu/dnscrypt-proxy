@@ -288,6 +288,7 @@ func (serversInfo *ServersInfo) getOne(qName string) *ServerInfo {
         la_flag := 0
         changed_flag := 0
         for la_flag != 1 { // Scuffed flag for while loop
+            changed_flag = 0 // Reset
             for k, v := range denylist { // Iterate over "first key" layer of map
                 _ = k
                 for key, val := range v { // Iterate over all IP addr. strings of DNS
