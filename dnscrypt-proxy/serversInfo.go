@@ -592,12 +592,13 @@ func (serversInfo *ServersInfo) getOne(qName string) *ServerInfo {
         default:
             candidate = serversInfo.lbStrategy.getCandidate(serversCount)
     }
-    serversInfo.prevCandidate = candidate
-    serverInfo := serversInfo.inner[candidate]
     // Compare addr. of candidate with denylist addresses
     if serversInfo.lbStrategyStr == "la" {
         la_flag := 0
         changed_flag := 0
+        candidate = serversInfo.lbStrategy.getCandidate(serversCount)
+        serversInfo.prevCandidate = candidate
+        serverInfo := serversInfo.inner[candidate]
         for la_flag != 1 { // Scuffed flag for while loop
             changed_flag = 0 // Reset
             for k, v := range denylist { // Iterate over "first key" layer of map
@@ -606,19 +607,20 @@ func (serversInfo *ServersInfo) getOne(qName string) *ServerInfo {
                     _ = val
                     if ((*serverInfo).TCPAddr).IP.String() == key { // On match, reset candidate and serverInfo, continue to double check new assignment
                         candidate = serversInfo.lbStrategy.getCandidate(serversCount)
+                        serversInfo.prevCandidate = candidate
+                        serverInfo = serversInfo.inner[candidate]
                         changed_flag = 1
                         break
                     }
                 }
-                if changed_flag == 1:
-                    serversInfo.prevCandidate = candidate
-                    serverInfo := serversInfo.inner[candidate]
             }
             if changed_flag == 0 {
                 la_flag = 1 // Set flag to exit while loop if if conditional not entered, candidate not re-assigned
             }
         }
     }
+    serversInfo.prevCandidate = candidate
+    serverInfo := serversInfo.inner[candidate]
     dlog.Debugf("Using candidate [%s] RTT: %d", (*serverInfo).Name, int((*serverInfo).rtt.Value()))
     serversInfo.Unlock()
 
