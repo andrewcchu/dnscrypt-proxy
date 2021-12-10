@@ -14,6 +14,7 @@ import (
     "sync"
     "time"
     "hash/fnv"
+    "reflect"
 
     "github.com/VividCortex/ewma"
     "github.com/jedisct1/dlog"
@@ -605,7 +606,7 @@ func (serversInfo *ServersInfo) getOne(qName string) *ServerInfo {
                 _ = k
                 for key, val := range v { // Iterate over all IP addr. strings of DNS
                     _ = val
-                    if ((*serverInfo).TCPAddr).IP.String() == key { // On match, reset candidate and serverInfo, continue to double check new assignment
+                    if reflect.DeepEqual((*serverInfo).TCPAddr.IP, net.ParseIP(key)) { // On match, reset candidate and serverInfo, continue to double check new assignment
                         candidate = serversInfo.lbStrategy.getCandidate(serversCount)
                         serversInfo.prevCandidate = candidate
                         serverInfo = serversInfo.inner[candidate]
